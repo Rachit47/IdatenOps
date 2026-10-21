@@ -11,15 +11,15 @@ Its AI agent, **Agent Savitar**, reads the lead history, checks current business
 - **Create a follow-up task** for a salesperson, such as checking whether the buyer wants to consider another vehicle.
 - **Propose a test-drive booking** when the buyer has clearly asked for a test drive and a valid vehicle, salesperson, and time slot are available.
 
-A follow-up task is an internal work item assigned to a salesperson. It does not place a call or send a message. An operator must approve an agent proposal before it changes business records. The backend checks the latest data, performs the approved action, and records what happened. Idaten does not contact customers.
+A follow-up task is an internal work item assigned to a salesperson. It does not place a call or send a message. An operator must approve an agent proposal before it changes business records. The backend checks the latest data, performs the approved action, and records what happened. Savitar does not contact customers.
 
 This is not a public car marketplace or a full dealership management system. Demo leads, buyers, staff, listings, and bookings are generated sample data. Vehicle specifications may use cited manufacturer sources; sample listing prices and stock status are not live market data.
 
 <!-- ## 1. Main screens
 
 1. **Lead Recovery Dashboard:** Overdue leads, assigned salesperson, lead status, last activity, contact restrictions, pending proposals, and open tasks.
-2. **Lead Review:** Buyer preferences and history, vehicle details, related sales-procedure evidence, Idaten's proposed action, and approve/reject controls.
-3. **Agent Trace:** The ordered steps Idaten ran, including tool calls, records checked, procedure passages found, decisions, errors, and action results. It shows recorded steps, not hidden model reasoning.
+2. **Lead Review:** Buyer preferences and history, vehicle details, related sales-procedure evidence, Savitar's proposed action, and approve/reject controls.
+3. **Agent Trace:** The ordered steps Savitar ran, including tool calls, records checked, procedure passages found, decisions, errors, and action results. It shows recorded steps, not hidden model reasoning.
 4. **Agent Activity:** Actions and decisions that actually occurred, including approvals, task creation, bookings, cancellations, vehicle checkout/return, and recorded outcomes. Each relevant item links to its agent trace.
 5. **Vehicle Inventory:** Search and filter listings, view condition and inspection status, and compare suitable alternatives.
 6. **Test Drive Schedule:** Available slots, bookings, assigned salesperson, customer-confirmation record, appointment status, vehicle checkout/return, and overdue alerts. -->
@@ -172,6 +172,7 @@ flowchart TD
 ```
 
 ## 5. Repository structure
+
 ```text
 IdatenOps/
 ├── apps/
@@ -205,188 +206,330 @@ IdatenOps/
 ├── docs/                       # Project notes and evaluation results
 └── .env
 ```
+
 ## 6. Database Design
 
 ```mermaid
 erDiagram
-    RETAIL_LOCATIONS {
-        bigint location_id PK
-        string location_code UK
-        string location_name
-        string city
-        string timezone
-        boolean is_active
-    }
-    TEAM_MEMBERS {
+    team_members {
         bigint team_member_id PK
-        bigint location_id FK
-        string staff_code UK
-        string display_name
-        string job_title
-        boolean is_active
+        bigint location_id FK,UK
+        varchar(24) staff_code UK
+        varchar(120) display_name
+        enum(sales_executive,team_lead,operations_specialist) job_title
+        tinyint(1) is_active
+        tinyint(1) is_test_drive_eligible
+        datetime(3) created_at
     }
-    VEHICLE_MODELS {
-        bigint vehicle_model_id PK
-        string make
-        string model_name
-        string variant
-        int model_year
+    policy_documents {
+        bigint policy_document_id PK
+        varchar(100) document_code UK
+        varchar(200) title
+        varchar(40) version_label UK
+        enum(authored_project_sop,approved_business_source) source_type
+        varchar(500) source_path
+        char(64) content_sha256 UK
+        enum(draft,active,retired) status
+        date effective_from
+        date effective_to
+        varchar(300) owner_note
+        datetime(3) created_at
+        datetime(3) updated_at
     }
-    VEHICLE_LISTINGS {
-        bigint listing_id PK
-        string stock_number UK
-        bigint location_id FK
-        bigint vehicle_model_id FK
-        decimal asking_price
-        string listing_status
-        string inspection_status
+    policy_chunks {
+        bigint policy_chunk_id PK
+        bigint policy_document_id FK,UK
+        int chunk_index UK
+        varchar(240) section_title
+        mediumtext chunk_text
+        int approximate_token_count
+        char(64) chunk_sha256 UK
+        varchar(120) vector_record_id UK
+        datetime(3) created_at
     }
-    TEST_DRIVE_SLOTS {
-        bigint test_drive_slot_id PK
-        bigint location_id FK
-        datetime starts_at_utc
-        datetime ends_at_utc
-        string slot_status
+    agent_run_events {
+        bigint agent_run_event_id PK
+        bigint agent_run_id FK,UK
+        int event_sequence UK
+        enum(state_transition,model_call,tool_call,retrieval,guardrail,proposal,action_execution,error,evaluation) event_type
+        varchar(120) component_name
+        enum(started,succeeded,failed,skipped) event_status
+        json input_summary
+        json output_summary
+        int duration_ms
+        int prompt_tokens
+        int completion_tokens
+        varchar(80) error_code
+        varchar(500) error_summary
+        datetime(3) created_at
     }
-    PROSPECTS {
-        bigint prospect_id PK
-        string prospect_code UK
-        string display_name
-        string contact_permission
-        decimal budget_min
-        decimal budget_max
+    follow_up_tasks {
+        bigint follow_up_task_id PK
+        varchar(32) task_code UK
+        bigint lead_id FK
+        bigint assigned_team_member_id FK
+        bigint source_proposal_id FK,UK
+        enum(call,prepare_message_draft,review_contact_permission,review_inventory_alternative,verify_lead_details,follow_up_review) task_type
+        enum(call,whatsapp,email,none,unknown) channel
+        varchar(200) title
+        text task_instructions
+        text draft_message
+        enum(critical,high,normal,low) priority
+        enum(open,in_progress,completed,cancelled) task_status
+        datetime(3) due_at
+        enum(operator,approved_agent_proposal) created_origin
+        char(64) idempotency_key UK
+        varchar(180) active_lead_task_key UK
+        varchar(1000) completion_note
+        datetime(3) completed_at
+        datetime(3) created_at
+        datetime(3) updated_at
     }
-    SALES_LEADS {
+    audit_logs {
+        bigint audit_log_id PK
+        bigint agent_run_id FK
+        enum(operator,agent,system) actor_type
+        varchar(100) actor_label
+        varchar(120) action_name
+        varchar(80) target_type
+        bigint target_id
+        enum(success,rejected,failed) action_outcome
+        json before_state
+        json after_state
+        char(36) correlation_uuid
+        datetime(3) created_at
+    }
+    agent_runs {
+        bigint agent_run_id PK
+        char(36) run_uuid UK
+        enum(daily_lead_recovery,single_lead_investigation,evaluation) run_type
+        enum(queued,running,succeeded,partial,failed,cancelled) run_status
+        varchar(100) initiated_by
+        varchar(80) model_provider
+        varchar(120) model_name
+        smallint candidate_count
+        smallint proposal_count
+        int prompt_tokens
+        int completion_tokens
+        decimal(12,8) estimated_cost_usd
+        int duration_ms
+        json result_summary
+        varchar(80) error_code
+        varchar(500) error_summary
+        datetime(3) started_at
+        datetime(3) completed_at
+        datetime(3) created_at
+        datetime(3) updated_at
+    }
+    sales_leads {
         bigint lead_id PK
-        string lead_code UK
+        varchar(32) lead_code UK
         bigint prospect_id FK
-        bigint location_id FK
+        bigint location_id FK,UK
         bigint assigned_team_member_id FK
         bigint primary_listing_id FK
-        string stage
-        datetime next_follow_up_at
+        enum(website,marketplace,phone,walk_in,referral,campaign,other) lead_source
+        enum(new,attempted_contact,contacted,qualified,test_drive_requested,negotiation,won,lost,invalid) stage
+        decimal(12,2) requested_budget_min
+        decimal(12,2) requested_budget_max
+        varchar(80) requested_make
+        varchar(100) requested_model
+        enum(hatchback,sedan,suv,muv,coupe,other,unknown) requested_body_type
+        enum(petrol,diesel,cng,electric,hybrid,other,unknown) requested_fuel_type
+        enum(manual,automatic,amt,cvt,dct,single_speed,other,unknown) requested_transmission
+        enum(immediate,within_30_days,within_90_days,flexible,unknown) purchase_timeframe
+        datetime(3) next_follow_up_at
+        datetime(3) last_contact_at
+        datetime(3) created_at
+        datetime(3) updated_at
+        datetime(3) closed_at
+        varchar(300) closed_reason
+        enum(synthetic_scenario) data_origin
     }
-    LEAD_ACTIVITIES {
-        bigint lead_activity_id PK
-        bigint lead_id FK
-        bigint recorded_by_team_member_id FK
-        string activity_type
-        datetime occurred_at
-        string outcome
+    prospects {
+        bigint prospect_id PK
+        varchar(32) prospect_code UK
+        varchar(120) display_name
+        varchar(100) city
+        enum(call,whatsapp,email,unknown) preferred_contact_channel
+        enum(permitted,unknown,do_not_contact) contact_permission
+        decimal(12,2) budget_min
+        decimal(12,2) budget_max
+        varchar(80) preferred_make
+        varchar(100) preferred_model
+        enum(hatchback,sedan,suv,muv,coupe,other,unknown) preferred_body_type
+        enum(petrol,diesel,cng,electric,hybrid,other,unknown) preferred_fuel_type
+        enum(manual,automatic,amt,cvt,dct,single_speed,other,unknown) preferred_transmission
+        enum(immediate,within_30_days,within_90_days,flexible,unknown) purchase_timeframe
+        enum(synthetic_scenario) data_origin
+        datetime(3) created_at
+        datetime(3) updated_at
     }
-    POLICY_DOCUMENTS {
-        bigint policy_document_id PK
-        string document_code
-        string version_label
-        string status
-        string content_sha256 UK
+    retail_locations {
+        bigint location_id PK
+        varchar(24) location_code UK
+        varchar(160) location_name
+        varchar(100) city
+        varchar(100) state
+        varchar(64) timezone
+        tinyint(1) is_active
+        datetime(3) created_at
+        datetime(3) updated_at
     }
-    POLICY_CHUNKS {
-        bigint policy_chunk_id PK
-        bigint policy_document_id FK
-        int chunk_index
-        string chunk_sha256 UK
-        string vector_record_id UK
-    }
-    AGENT_RUNS {
-        bigint agent_run_id PK
-        string run_uuid UK
-        string run_type
-        string run_status
-        string model_provider
-        int duration_ms
-    }
-    AGENT_RUN_EVENTS {
-        bigint agent_run_event_id PK
-        bigint agent_run_id FK
-        int event_sequence
-        string event_type
-        string event_status
-        int duration_ms
-    }
-    ACTION_PROPOSALS {
+    action_proposals {
         bigint action_proposal_id PK
-        string proposal_uuid UK
-        bigint agent_run_id FK
-        bigint lead_id FK
+        char(36) proposal_uuid UK
+        bigint agent_run_id FK,UK
+        bigint lead_id FK,UK
+        enum(create_follow_up_task,book_test_drive) action_type
+        enum(call,prepare_message_draft,review_contact_permission,review_inventory_alternative,verify_lead_details,follow_up_review) proposed_task_type
+        varchar(200) title
+        text task_instructions
+        enum(call,whatsapp,email,none,unknown) suggested_channel
+        text draft_message
         bigint proposed_assignee_team_member_id FK
-        bigint proposed_listing_id FK
-        bigint proposed_salesperson_team_member_id FK
-        bigint proposed_test_drive_slot_id FK
+        datetime(3) proposed_due_at
+        bigint proposed_listing_id FK,UK
+        bigint proposed_salesperson_team_member_id FK,UK
+        bigint proposed_test_drive_slot_id FK,UK
         bigint test_drive_intent_activity_id FK
-        string action_type
-        string proposal_status
+        enum(critical,high,normal,low) priority
+        json evidence_refs
+        json policy_citations
+        enum(pending,approved,rejected,expired,stale) proposal_status
+        char(64) idempotency_key UK
+        datetime(3) expires_at
+        datetime(3) decision_at
+        varchar(100) decided_by
+        varchar(500) decision_note
+        bigint pending_lead_id UK
+        datetime(3) created_at
+        datetime(3) updated_at
     }
-    TEST_DRIVE_BOOKINGS {
+    vehicle_listings {
+        bigint listing_id PK
+        varchar(32) stock_number UK
+        bigint location_id FK,UK
+        bigint vehicle_model_id FK
+        smallint registration_year
+        int odometer_km
+        decimal(12,2) asking_price
+        enum(excellent,good,fair,needs_review) condition_grade
+        enum(not_started,in_progress,passed,needs_review,failed) inspection_status
+        enum(available,reserved,sold,withdrawn) listing_status
+        date acquired_at
+        date listed_at
+        date sold_at
+        enum(synthetic_scenario) data_origin
+        enum(synthetic_rule_based) asking_price_origin
+        varchar(500) scenario_notes
+        datetime(3) created_at
+        datetime(3) updated_at
+    }
+    vehicle_models {
+        bigint vehicle_model_id PK
+        varchar(80) make UK
+        varchar(100) model_name UK
+        varchar(120) variant UK
+        smallint model_year UK
+        enum(petrol,diesel,cng,electric,hybrid,other,unknown) fuel_type
+        enum(manual,automatic,amt,cvt,dct,single_speed,other,unknown) transmission
+        enum(hatchback,sedan,suv,muv,coupe,other,unknown) body_type
+        tinyint seating_capacity
+        smallint engine_cc
+        decimal(6,2) claimed_mileage_kmpl
+        varchar(1000) specification_source_url
+        date specification_checked_at
+        varchar(500) source_notes
+        datetime(3) created_at
+        datetime(3) updated_at
+    }
+    test_drive_bookings {
         bigint test_drive_booking_id PK
-        string booking_code UK
+        varchar(32) booking_code UK
         bigint location_id FK
         bigint lead_id FK
         bigint listing_id FK
         bigint assigned_team_member_id FK
         bigint test_drive_slot_id FK
-        bigint source_proposal_id FK
-        string booking_status
-        string customer_confirmation_status
+        bigint source_proposal_id FK,UK
+        enum(operator,approved_agent_proposal) booking_origin
+        enum(scheduled,checked_out,returned,completed,cancelled,no_show) booking_status
+        enum(not_recorded,confirmed,declined) customer_confirmation_status
+        varchar(500) customer_confirmation_note
+        datetime(3) checked_out_at_utc
+        datetime(3) actual_return_at_utc
+        enum(interested,follow_up_needed,not_interested,sale_progressed,other) completion_outcome
+        varchar(1000) outcome_note
+        datetime(3) completed_at_utc
+        datetime(3) cancelled_at_utc
+        varchar(500) cancellation_reason
+        datetime(3) no_show_at_utc
+        char(64) idempotency_key UK
+        varchar(100) active_vehicle_slot_key UK
+        varchar(100) active_staff_slot_key UK
+        datetime(3) created_at
+        datetime(3) updated_at
     }
-    FOLLOW_UP_TASKS {
-        bigint follow_up_task_id PK
-        string task_code UK
-        bigint lead_id FK
-        bigint assigned_team_member_id FK
-        bigint source_proposal_id FK
-        string task_type
-        string task_status
-        datetime due_at
+    test_drive_slots {
+        bigint test_drive_slot_id PK
+        varchar(40) slot_code UK
+        bigint location_id FK,UK
+        datetime(3) starts_at_utc UK
+        datetime(3) ends_at_utc
+        smallint turnaround_buffer_minutes
+        enum(open,closed) slot_status
+        varchar(300) closure_reason
+        datetime(3) created_at
+        datetime(3) updated_at
     }
-    AUDIT_LOGS {
-        bigint audit_log_id PK
-        bigint agent_run_id FK
-        string actor_type
-        string action_name
-        string target_type
-        string action_outcome
+    lead_activities {
+        bigint lead_activity_id PK
+        bigint lead_id FK,UK
+        bigint recorded_by_team_member_id FK
+        enum(inbound_enquiry,call_attempt,call_connected,message_received,website_chat,internal_note,test_drive_requested,test_drive_request_withdrawn,test_drive_scheduled,test_drive_customer_confirmation_recorded,test_drive_cancelled,test_drive_checked_out,test_drive_returned,test_drive_completed,test_drive_no_show,status_changed,follow_up_completed,contact_permission_updated) activity_type
+        enum(inbound,outbound,internal) direction
+        enum(call,whatsapp,email,website,marketplace,walk_in,internal,unknown) channel
+        enum(connected,no_answer,interested,not_interested,requested_callback,permission_unknown,do_not_contact,information_only,other,not_applicable) outcome
+        varchar(1000) summary_text
+        text unstructured_note
+        datetime(3) occurred_at
+        datetime(3) created_at
+        enum(synthetic_scenario,operator_entry) data_origin
     }
-
-    RETAIL_LOCATIONS ||--o{ TEAM_MEMBERS : employs
-    RETAIL_LOCATIONS ||--o{ VEHICLE_LISTINGS : stocks
-    RETAIL_LOCATIONS ||--o{ TEST_DRIVE_SLOTS : defines
-    RETAIL_LOCATIONS ||--o{ SALES_LEADS : receives
-    RETAIL_LOCATIONS ||--o{ TEST_DRIVE_BOOKINGS : hosts
-
-    VEHICLE_MODELS ||--o{ VEHICLE_LISTINGS : describes
-    PROSPECTS ||--o{ SALES_LEADS : raises
-    TEAM_MEMBERS o|--o{ SALES_LEADS : assigned_to
-    VEHICLE_LISTINGS o|--o{ SALES_LEADS : primary_vehicle_for
-    SALES_LEADS ||--o{ LEAD_ACTIVITIES : has_history
-    TEAM_MEMBERS o|--o{ LEAD_ACTIVITIES : records
-
-    POLICY_DOCUMENTS ||--o{ POLICY_CHUNKS : contains
-
-    AGENT_RUNS ||--o{ AGENT_RUN_EVENTS : records
-    AGENT_RUNS ||--o{ ACTION_PROPOSALS : produces
-    SALES_LEADS ||--o{ ACTION_PROPOSALS : is_investigated_by
-    TEAM_MEMBERS o|--o{ ACTION_PROPOSALS : proposed_task_assignee
-    TEAM_MEMBERS o|--o{ ACTION_PROPOSALS : proposed_test_drive_staff
-    VEHICLE_LISTINGS o|--o{ ACTION_PROPOSALS : proposed_vehicle
-    TEST_DRIVE_SLOTS o|--o{ ACTION_PROPOSALS : proposed_slot
-    LEAD_ACTIVITIES o|--o{ ACTION_PROPOSALS : test_drive_request_evidence
-
-    SALES_LEADS ||--o{ TEST_DRIVE_BOOKINGS : has_bookings
-    VEHICLE_LISTINGS ||--o{ TEST_DRIVE_BOOKINGS : is_booked_for
-    TEAM_MEMBERS ||--o{ TEST_DRIVE_BOOKINGS : assigned_to
-    TEST_DRIVE_SLOTS ||--o{ TEST_DRIVE_BOOKINGS : reserves
-    ACTION_PROPOSALS o|--o| TEST_DRIVE_BOOKINGS : may_create
-
-    SALES_LEADS ||--o{ FOLLOW_UP_TASKS : has_tasks
-    TEAM_MEMBERS o|--o{ FOLLOW_UP_TASKS : assigned_to
-    ACTION_PROPOSALS o|--o| FOLLOW_UP_TASKS : may_create
-
-    AGENT_RUNS o|--o{ AUDIT_LOGS : associated_with
+    retail_locations ||--o{ team_members : "location_id"
+    retail_locations ||--o{ vehicle_listings : "location_id"
+    vehicle_models ||--o{ vehicle_listings : "vehicle_model_id"
+    retail_locations ||--o{ test_drive_slots : "location_id"
+    prospects ||--o{ sales_leads : "prospect_id"
+    retail_locations ||--o{ sales_leads : "location_id"
+    team_members ||--o{ sales_leads : "assigned_team_member_id"
+    vehicle_listings ||--o{ sales_leads : "primary_listing_id"
+    sales_leads ||--o{ lead_activities : "lead_id"
+    team_members ||--o{ lead_activities : "recorded_by_team_member_id"
+    policy_documents ||--o{ policy_chunks : "policy_document_id"
+    agent_runs ||--o{ agent_run_events : "agent_run_id"
+    agent_runs ||--o{ action_proposals : "agent_run_id"
+    sales_leads ||--o{ action_proposals : "lead_id"
+    team_members ||--o{ action_proposals : "proposed_assignee_team_member_id"
+    vehicle_listings ||--o{ action_proposals : "proposed_listing_id"
+    team_members ||--o{ action_proposals : "proposed_salesperson_team_member_id"
+    test_drive_slots ||--o{ action_proposals : "proposed_test_drive_slot_id"
+    lead_activities ||--o{ action_proposals : "test_drive_intent_activity_id"
+    retail_locations ||--o{ test_drive_bookings : "location_id"
+    sales_leads ||--o{ test_drive_bookings : "lead_id"
+    vehicle_listings ||--o{ test_drive_bookings : "listing_id"
+    team_members ||--o{ test_drive_bookings : "assigned_team_member_id"
+    test_drive_slots ||--o{ test_drive_bookings : "test_drive_slot_id"
+    action_proposals ||--o{ test_drive_bookings : "source_proposal_id"
+    sales_leads ||--o{ follow_up_tasks : "lead_id"
+    team_members ||--o{ follow_up_tasks : "assigned_team_member_id"
+    action_proposals ||--o{ follow_up_tasks : "source_proposal_id"
+    agent_runs ||--o{ audit_logs : "agent_run_id"
 ```
 
 | Table                                         | What it stores                                                                                     |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------|
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | `retail_locations`, `team_members`            | Sample locations and sales staff. Staff records are not login accounts.                            |
 | `vehicle_models`, `vehicle_listings`          | Vehicle facts and individual sample stock units.                                                   |
 | `prospects`, `sales_leads`, `lead_activities` | Buyer preferences, enquiries, lead status, and recorded activity.                                  |
@@ -410,6 +553,7 @@ erDiagram
 The system preserves data consistency and prevents unapproved or invalid actions. If validation fails, the proposed action is not executed.
 
 ### Data consistency
+
 - Approval validates the proposal against the current lead, contact permissions, vehicle condition, availability, time slot, staff assignment, and supporting evidence.
 - Repeated requests must not create duplicate tasks or bookings.
 - Concurrent booking attempts must not reserve the same vehicle or time slot. Conflicting requests are rejected.
@@ -417,18 +561,21 @@ The system preserves data consistency and prevents unapproved or invalid actions
 - Related database changes are committed atomically. Failed transactions leave no partial business action.
 
 ### Test-drive lifecycle
+
 - A vehicle remains unavailable after checkout until staff records its return.
 - An overdue return raises an alert without automatically marking the vehicle as returned.
 - An appointment without a recorded outcome remains unresolved. The system does not automatically classify it as a no-show.
 - Missing contact permission or an unclear test-drive request prevents the corresponding action from being proposed.
 
 ### Agent and dependency failures
+
 - Model, MCP, database, and vector search failures are recorded in the agent trace.
 - Missing procedure evidence is reported as unavailable. The agent must not invent policies or citations.
 - Retrieved documents and lead notes are treated as untrusted data. They cannot override tool permissions or system rules.
 - Database-backed workspace views remain usable when agent-related dependencies fail.
 
 ### Auditability
+
 - Agent traces contain concise, safe summaries of tool inputs, outputs, and execution results. They exclude secrets and hidden model reasoning.
 - The activity log records an action as successful only after the database transaction commits and the result is verified.
 - Failed, rejected, stale, and conflicting actions retain their outcomes for review.
