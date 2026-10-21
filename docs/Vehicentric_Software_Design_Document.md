@@ -85,6 +85,7 @@ Vehicentric is a **modular monolith**: one web app and one backend application w
 
 ### High-level Architecture
 
+```mermaid
 flowchart TB
     OP["Sales Operator"] --> UI["Web App<br/>React + TypeScript"]
     UI --> API["FastAPI"]
@@ -120,9 +121,11 @@ flowchart TB
     class OP,UI user
     class AGENT,MCPCLIENT,MCPSERVER,RAG agent
     class DB,VDB storage
+```
 
 ### Lead recovery and test-drive workflow
 
+```mermaid
 flowchart TD
 A["Find Overdue Leads<br/>Using Business Rules"]
 B["Agent Idaten Investigates<br/>Lead History, Preferences, Inventory and SOPs"]
@@ -167,10 +170,11 @@ S["Keep Vehicle Unavailable<br/>Raise Overdue-Return Alert"]
 - **LLM provider adapter:** lets the backend use one configured language model without tying business rules to a single provider.
 
 Dates, contact restrictions, vehicle readiness, slot availability, conflicts, approval, and database writes are controlled by backend business logic. The model cannot run arbitrary SQL or perform the final approved action by itself.
+```
 
 ## 5. Project structure
 
-```text
+```mermaid
 vehicentric/
 ├── apps/
 │   ├── api/
@@ -206,6 +210,7 @@ vehicentric/
 
 ## 6. Database Design
 
+```mermaid
 erDiagram
 RETAIL_LOCATIONS {
 bigint location_id PK
@@ -381,6 +386,7 @@ string action_outcome
     ACTION_PROPOSALS o|--o| FOLLOW_UP_TASKS : may_create
 
     AGENT_RUNS o|--o{ AUDIT_LOGS : associated_with
+```
 
 | Table                                         | What it stores                                                                                   |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------ |
