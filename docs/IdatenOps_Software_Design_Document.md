@@ -1,12 +1,12 @@
-# Vehicentric
+# Idaten Ops
 
-## AI-assisted lead follow-up workspace for used-car sales.
+## AI-assisted workflow for pre-owned automotive retail.
 
 **Tagline:** Recover missed leads. Make every next step count.
 
-Vehicentric is an internal workspace for used-car sales teams. It helps staff review overdue buyer enquiries, check vehicle and appointment details, and act on the right follow-up.
+Idaten Ops is an internal workspace for preowned-car sales teams. It helps staff review overdue buyer enquiries, check vehicle and appointment details, and act on the right follow-up.
 
-Its AI agent, **Agent Idaten**, reads the lead history, checks current business records, looks up the relevant sales procedure, and proposes one specific action:
+Its AI agent, **Agent Savitar**, reads the lead history, checks current business records, looks up the relevant sales procedure, and proposes one specific action:
 
 - **Create a follow-up task** for a salesperson, such as checking whether the buyer wants to consider another vehicle.
 - **Propose a test-drive booking** when the buyer has clearly asked for a test drive and a valid vehicle, salesperson, and time slot are available.
@@ -24,12 +24,12 @@ This is not a public car marketplace or a full dealership management system. Dem
 5. **Vehicle Inventory:** Search and filter listings, view condition and inspection status, and compare suitable alternatives.
 6. **Test Drive Schedule:** Available slots, bookings, assigned salesperson, customer-confirmation record, appointment status, vehicle checkout/return, and overdue alerts. -->
 
-The operator can check inventory and create a booking manually. Agent Idaten uses the same backend rules and records, so its results cannot bypass the rules used by the operator.
+The operator can check inventory and create a booking manually. Agent Savitar uses the same backend rules and records, so its results cannot bypass the rules used by the operator.
 
 ## 1. Lead Recovery workflow
 
 1. **Lead selection:** The backend identifies open leads whose follow-up deadlines have passed, using deterministic business rules.
-2. **Investigation:** Agent Idaten reviews lead history, recent activity, contact permissions, existing tasks, relevant inventory, and applicable sales procedures.
+2. **Investigation:** Agent Savitar reviews lead history, recent activity, contact permissions, existing tasks, relevant inventory, and applicable sales procedures.
 3. **Recommendation:** The agent proposes an internal follow-up task or a test-drive booking when the recorded evidence supports that action. Each proposal includes its supporting facts and procedure references.
 4. **Human decision:** An operator approves or rejects the proposal. No proposed action changes business records before approval.
 5. **Validation and execution:** The backend revalidates the approved proposal against current records and executes it only if all required conditions still hold.
@@ -70,7 +70,7 @@ If an appointment slot ends without a recorded outcome, the schedule displays **
 
 - A local operations workspace with six screens: Lead Recovery Dashboard, Lead Review, Agent Trace, Agent Activity, Vehicle Inventory, and Test Drive Schedule.
 - Lead history, overdue-lead recovery, inventory search, internal follow-up tasks, and test-drive booking.
-- Human approval for every action proposed by Agent Idaten.
+- Human approval for every action proposed by Agent Savitar.
 - Trace records, activity history, and audit records for important changes.
 - Sample sales-procedure documents with source and section references.
 - Repeatable synthetic data and tests covering normal workflows and important failure cases.
@@ -85,11 +85,11 @@ If an appointment slot ends without a recorded outcome, the schedule displays **
 
 ## 4. Architecture
 
-Vehicentric uses a modular monolith architecture. The web application communicates with one FastAPI backend, which contains the business capabilities, agent workflow, knowledge retrieval, and audit functionality.
+Idaten Ops uses a modular monolith architecture. The web application communicates with one FastAPI backend, which contains the business capabilities, agent workflow, knowledge retrieval, and audit functionality.
 
 The backend modules share one MySQL database and run as a single application. They are logical business and technical boundaries, not separately deployed microservices.
 
-Agent Idaten accesses business data through typed MCP tools. These tools expose approved read operations and do not provide arbitrary SQL access. Business services remain responsible for validation and data changes. The approval flow executes proposed actions only after human approval and a fresh validation of the relevant records.
+Agent Savitar accesses business data through typed MCP tools. These tools expose approved read operations and do not provide arbitrary SQL access. Business services remain responsible for validation and data changes. The approval flow executes proposed actions only after human approval and a fresh validation of the relevant records.
 
 Chroma supports procedure retrieval, while the authoritative procedure content and metadata remain in the application’s source documents and database. The agent trace records observable execution steps without storing hidden model reasoning.
 
@@ -100,12 +100,12 @@ flowchart TB
     OP["Sales Operator"] --> UI["Web App<br/>React + TypeScript"]
     UI --> API["FastAPI"]
 
-    subgraph APP["Vehicentric Backend - Modular Monolith"]
+    subgraph APP["Idaten Ops Backend - Modular Monolith"]
         API --> REC["Lead Recovery"]
         API --> SVC["Business Services<br/>Leads, Inventory, Follow-ups, Test Drives"]
         API --> APPROVE["Approval and Execution"]
 
-        REC --> AGENT["LangGraph Workflow<br/>Agent Idaten"]
+        REC --> AGENT["LangGraph Workflow<br/>Agent Savitar"]
         AGENT <--> MCPCLIENT["MCP Client"]
         MCPCLIENT <--> MCPSERVER["MCP Server<br/>Typed Read-only Tools"]
         MCPSERVER --> SVC
@@ -138,7 +138,7 @@ flowchart TB
 ```mermaid
 flowchart TD
     A["Find Overdue Leads<br/>Using Business Rules"]
-    B["Agent Idaten Investigates<br/>Lead History, Preferences, Inventory and SOPs"]
+    B["Agent Savitar Investigates<br/>Lead History, Preferences, Inventory and SOPs"]
     C{"Is a Test Drive<br/>the Right Next Step?"}
     D["Propose Follow-up Task<br/>or Request Human Review"]
     E["Find Available Slots<br/>Check Vehicle, Salesperson and Opening Hours"]
@@ -173,11 +173,11 @@ flowchart TD
 
 ## 5. Repository structure
 ```text
-vehicentric/
+IdatenOps/
 ├── apps/
 │   ├── api/
 │   │   ├── pyproject.toml
-│   │   ├── src/vehicentric/
+│   │   ├── src/idatenOps/
 │   │   │   ├── main.py
 │   │   │   ├── api/            # FastAPI routes and Pydantic schemas
 │   │   │   ├── leads/          # Lead records, activity, eligibility
@@ -185,7 +185,7 @@ vehicentric/
 │   │   │   ├── inventory/      # Listings, readiness, alternatives
 │   │   │   ├── follow_ups/     # Follow-up task rules and actions
 │   │   │   ├── test_drives/    # Slots, bookings, checkout and return
-│   │   │   ├── agent/          # Agent Idaten and LangGraph workflow
+│   │   │   ├── agent/          # Agent Savitar and LangGraph workflow
 │   │   │   ├── mcp/            # MCP server and typed tool definitions
 │   │   │   ├── knowledge/      # Procedure ingestion and retrieval
 │   │   │   ├── audit/          # Activity, audit, and trace persistence
