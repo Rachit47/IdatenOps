@@ -1,2 +1,2 @@
-# Vehicentric
-AI-assisted lead follow-up workspace for used-car sales.
+# Idaten Ops
+AI-assisted workflow for pre-owned automotive retail
