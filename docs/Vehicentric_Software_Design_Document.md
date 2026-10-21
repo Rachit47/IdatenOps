@@ -26,62 +26,72 @@ This is not a public car marketplace or a full dealership management system. Dem
 
 The operator can check inventory and create a booking manually. Agent Idaten uses the same backend rules and records, so its results cannot bypass the rules used by the operator.
 
-## 1. Project workflow
+## 1. Lead Recovery workflow
 
-1. The operator starts lead recovery.
-2. The backend selects overdue, open leads using fixed rules. It does not ask the language model to calculate dates or decide lead eligibility.
-3. Idaten checks the lead, recent activity, contact permission, existing tasks, relevant vehicles, and applicable sales-procedure documents.
-4. Idaten proposes a follow-up task or, when there is clear evidence of a test-drive request, a test-drive booking. It includes the facts and procedure sources behind its suggestion.
-5. The operator approves or rejects the proposal.
-6. On approval, the backend rechecks the current data. If the proposal is still valid, it creates the task or booking in a database transaction.
-7. The result appears in Agent Activity and the related Agent Trace. If the data changed or a conflict appeared, the action is rejected and the reason is shown.
-8. Staff record real-world outcomes. Creating a task does not mean a call occurred, and reserving a slot does not mean the buyer was notified or confirmed.
+1. **Lead selection:** The backend identifies open leads whose follow-up deadlines have passed, using deterministic business rules.
+2. **Investigation:** Agent Idaten reviews lead history, recent activity, contact permissions, existing tasks, relevant inventory, and applicable sales procedures.
+3. **Recommendation:** The agent proposes an internal follow-up task or a test-drive booking when the recorded evidence supports that action. Each proposal includes its supporting facts and procedure references.
+4. **Human decision:** An operator approves or rejects the proposal. No proposed action changes business records before approval.
+5. **Validation and execution:** The backend revalidates the approved proposal against current records and executes it only if all required conditions still hold.
+6. **Outcome recording:** The workspace displays the action result and its associated trace. Invalid or conflicting proposals are rejected with a clear reason.
+7. **Real-world status:** Staff record outcomes that cannot be established by the system alone. A created task does not prove that a call occurred, and a reserved slot does not prove customer notification or confirmation.
 
-## 2. Test-drive rules
+## 2. Test-drive booking requirements
 
-Test-drive booking is part of the first release. It is an internal reservation and does not send a message or book anything in an external calendar.
+Test-drive booking is included in the first release. A booking reserves an internal appointment slot; it does not send customer notifications or create an external calendar event.
 
-- The agent may propose a test drive only when the lead has a recorded inbound activity that clearly says the buyer requested one. General interest in a car is not enough.
-- The contact-permission status must be `permitted`. `unknown` or `do_not_contact` blocks a booking until staff resolves the status.
-- The selected listing must belong to the lead's location, be available, and have passed inspection. Sold, withdrawn, reserved, or review-needed vehicles cannot be booked.
-- The salesperson must be active, assigned to that location, and eligible to handle test drives. The selected slot must be open, in the future, and at the same location.
-- The prototype offers three sample slots per day, at 10:00, 13:00, and 16:00 local time. Each slot is 30 minutes, followed by a 15-minute vehicle turnaround buffer. These are configurable demo rules, not universal dealership hours.
-- The backend checks vehicle and salesperson conflicts when showing slots and checks again when a booking is approved. A screen showing a free slot is not a guarantee that it will still be free later.
-- Agent proposals do not reserve a slot. Only successful approval commits the reservation. Manual bookings use the same checks.
+### Eligibility and availability
 
-### Booking status and return of the vehicle
+- A test-drive proposal requires recorded inbound activity that clearly establishes the buyer's request. General interest in a vehicle is insufficient.
+- The contact-permission status must be `permitted`. The statuses `unknown` and `do_not_contact` prevent the agent from proposing a booking.
+- The vehicle must belong to the lead's location, be available, and have passed inspection. Sold, withdrawn, reserved, and review-needed vehicles are ineligible.
+- The assigned salesperson must be active, eligible for test drives, and associated with the relevant location.
+- The selected slot must be in the future, open, and associated with the same location.
+- The demo schedule provides three sample start times per day: 10:00, 13:00, and 16:00 local time. Each appointment lasts 30 minutes, followed by a 15-minute vehicle turnaround buffer. These values are configurable demo settings.
+- Availability is validated when slots are displayed and checked again during booking approval. Displayed availability does not guarantee a later reservation.
+- Proposed bookings do not reserve slots. A reservation is created only after successful approval and validation. Manual bookings follow the same rules.
 
-- `scheduled`: an internal slot is reserved. Customer confirmation remains `not_recorded` until staff records it.
-- `checked_out`: staff has recorded that the vehicle physically left. The system never assumes this happened.
-- `returned`: staff has recorded the actual return time. The vehicle is not available for another drive before its return is recorded.
-- `completed`: staff has recorded the result of the drive.
-- `cancelled`: staff cancelled the booking before checkout and recorded a reason.
-- `no_show`: staff explicitly recorded a no-show after the slot ended. The system does not infer a no-show just because time passed.
+### Booking lifecycle and recorded outcomes
 
-If a checked-out vehicle passes its expected return time, the schedule shows **Return overdue**. The booking stays checked out and the vehicle remains blocked until staff records the actual return. A scheduled appointment with no recorded outcome after its slot ends shows **Appointment outcome unresolved**.
+- `scheduled`: The internal appointment slot is reserved. Customer confirmation remains `not_recorded` until staff records it.
+- `checked_out`: Staff has recorded that the vehicle physically left for the test drive.
+- `returned`: Staff has recorded the vehicle's actual return time. The vehicle cannot be released for another test drive until its return is recorded and no other hold applies.
+- `completed`: Staff has recorded the test-drive outcome, and the vehicle return has been recorded where checkout occurred.
+- `cancelled`: Staff has cancelled the booking before checkout and recorded the reason.
+- `no_show`: Staff has explicitly recorded a no-show after the appointment slot has ended. The system never infers a no-show from elapsed time alone.
+
+If a checked-out vehicle passes its expected return time, the schedule displays **Return overdue**. The vehicle remains unavailable until staff records its actual return.
+
+If an appointment slot ends without a recorded outcome, the schedule displays **Appointment outcome unresolved**. This status does not imply a no-show.
 
 ## 3. Scope
 
-### Included
+### Included in the first release
 
-- One local operations workspace with the six screens above.
-- Lead recovery, lead history, vehicle search, internal follow-up tasks, and test-drive booking.
+- A local operations workspace with six screens: Lead Recovery Dashboard, Lead Review, Agent Trace, Agent Activity, Vehicle Inventory, and Test Drive Schedule.
+- Lead history, overdue-lead recovery, inventory search, internal follow-up tasks, and test-drive booking.
 - Human approval for every action proposed by Agent Idaten.
-- Agent trace, activity history, and an audit record for important changes.
-- A small set of sample sales-procedure documents with source and section references.
-- A repeatable data seed and tests for normal cases and important failure cases.
+- Trace records, activity history, and audit records for important changes.
+- Sample sales-procedure documents with source and section references.
+- Repeatable synthetic data and tests covering normal workflows and important failure cases.
 
-### Not included
+### Excluded from the first release
 
-- Public marketplace, buyer login, self-service booking, payments, or financing.
-- Real calls, email, SMS, or WhatsApp; external customer notifications or calendar connections.
-- Licence checks, gate passes, GPS tracking, or connections to a real dealership system.
-- Multi-tenant hosting, production authentication, multiple autonomous agents, or separately deployed business microservices.
-- Claims of real sales growth or savings. These would require a live trial and measured results.
+- Public marketplace features, buyer accounts, self-service booking, payments, and financing.
+- Outbound calls, email, SMS, WhatsApp, customer notifications, and external calendar integrations.
+- Licence verification, gate passes, GPS tracking, and integration with a live dealership system.
+- Multi-tenant hosting, production authentication, multiple autonomous agents, and separately deployed business microservices.
+- Claims of increased sales or reduced operating costs without evidence from a measured live trial.
 
 ## 4. Architecture
 
-Vehicentric is a **modular monolith**: one web app and one backend application with clear module boundaries. The modules run as one service and use one MySQL database. They are not separate business microservices.
+Vehicentric uses a modular monolith architecture. The web application communicates with one FastAPI backend, which contains the business capabilities, agent workflow, knowledge retrieval, and audit functionality.
+
+The backend modules share one MySQL database and run as a single application. They are logical business and technical boundaries, not separately deployed microservices.
+
+Agent Idaten accesses business data through typed MCP tools. These tools expose approved read operations and do not provide arbitrary SQL access. Business services remain responsible for validation and data changes. The approval flow executes proposed actions only after human approval and a fresh validation of the relevant records.
+
+Chroma supports procedure retrieval, while the authoritative procedure content and metadata remain in the application’s source documents and database. The agent trace records observable execution steps without storing hidden model reasoning.
 
 ### High-level Architecture
 
@@ -161,8 +171,8 @@ flowchart TD
     Q -- "No" --> S
 ```
 
-## 5. Project structure
-
+## 5. Repository structure
+```text
 vehicentric/
 ├── apps/
 │   ├── api/
@@ -194,7 +204,7 @@ vehicentric/
 ├── scripts/                    # Seed data and build the procedure index
 ├── docs/                       # Project notes and evaluation results
 └── .env
-
+```
 ## 6. Database Design
 
 ```mermaid
@@ -375,31 +385,50 @@ erDiagram
     AGENT_RUNS o|--o{ AUDIT_LOGS : associated_with
 ```
 
-| Table                                         | What it stores                                                                                   |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `retail_locations`, `team_members`            | Sample locations and sales staff. Staff records are not login accounts.                          |
-| `vehicle_models`, `vehicle_listings`          | Vehicle facts and individual sample stock units.                                                 |
-| `prospects`, `sales_leads`, `lead_activities` | Buyer preferences, enquiries, lead status, and recorded activity.                                |
-| `follow_up_tasks`                             | Internal work assigned to staff, with due date and status.                                       |
-| `test_drive_slots`, `test_drive_bookings`     | Dated slots, resource assignments, booking status, actual checkout/return, and recorded outcome. |
-| `policy_documents`, `policy_chunks`           | Source procedures and sections used for retrieval and citations.                                 |
-| `agent_runs`, `agent_run_events`              | Agent run status, ordered trace events, tool results, errors, timing, and usage where available. |
-| `action_proposals`                            | Proposed action, evidence, source citations, expiry, and human decision.                         |
-| `audit_logs`                                  | Who approved, rejected, or changed something, when it happened, and the result.                  |
+| Table                                         | What it stores                                                                                     |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------|
+| `retail_locations`, `team_members`            | Sample locations and sales staff. Staff records are not login accounts.                            |
+| `vehicle_models`, `vehicle_listings`          | Vehicle facts and individual sample stock units.                                                   |
+| `prospects`, `sales_leads`, `lead_activities` | Buyer preferences, enquiries, lead status, and recorded activity.                                  |
+| `follow_up_tasks`                             | Internal work assigned to staff, with due date and status.                                         |
+| `test_drive_slots`, `test_drive_bookings`     | Appointment slots, reservations, assigned staff, booking status, and customer-confirmation status. |
+| `policy_documents`, `policy_chunks`           | Source procedures and sections used for retrieval and citations.                                   |
+| `agent_runs`, `agent_run_events`              | Agent run status, ordered trace events, tool results, errors, timing, and usage where available.   |
+| `action_proposals`                            | Proposed action, evidence, source citations, expiry, and human decision.                           |
+| `audit_logs`                                  | Who approved, rejected, or changed something, when it happened, and the result.                    |
 
-Store event timestamps in UTC and display appointment times in the location's time zone. Use foreign keys, appropriate indexes, and database transactions for related writes. Keep sample data marked as synthetic. Do not treat Chroma as the source of truth for procedure content.
+### Data integrity and storage requirements
+
+- All event timestamps are stored in UTC. Appointment times are displayed in the associated location's time zone.
+- Foreign keys and appropriate indexes support referential integrity and common query patterns.
+- Related business changes are committed atomically through database transactions.
+- Synthetic records are identifiable as demo data.
+- MySQL is the source of truth for procedure content and metadata. Chroma stores retrieval representations and is not the authoritative source for policies.
 
 ## 7. Safety and failure handling
 
-- **Stale proposal:** recheck the lead, contact permission, vehicle, inspection, slot, staff, and request evidence at approval. Reject the proposal if a required fact has changed.
-- **Duplicate request or retry:** use an idempotency key (a stable request ID) and database uniqueness rules so a repeated request does not create another task or booking.
-- **Two operators book at once:** lock the relevant rows and recheck conflicts in one transaction. The losing request gets a clear conflict response.
-- **No valid slot or vehicle:** do not make a booking. Show the reason and allow the operator to review alternatives.
-- **Vehicle return is late:** show an alert and keep the vehicle unavailable until the return is recorded.
-- **No recorded appointment outcome:** show an unresolved status; do not mark it a no-show automatically.
-- **No contact permission or unclear test-drive request:** do not propose outreach or a booking that breaks the rules. Ask for staff review or propose a permitted internal review task.
-- **Model, MCP, database, or vector search fails:** show the failed step in the trace. Do not create a partially validated business action. Manual database-backed views should remain usable when their dependencies are available.
-- **Missing procedure evidence:** state that no suitable procedure was found. Do not make up a policy or citation.
-- **Untrusted notes or retrieved text:** treat them as data, not instructions that can change tool permissions. This protects against prompt injection, where text tries to trick the agent into breaking its rules.
+The system preserves data consistency and prevents unapproved or invalid actions. If validation fails, the proposed action is not executed.
 
-A trace records tool inputs and outputs as short, safe summaries. It must not store secrets or hidden model reasoning. Save related changes in one database transaction, so they either all succeed or none do. The activity log marks an action successful only after the transaction commits and the result is read back.
+### Data consistency
+- Approval validates the proposal against the current lead, contact permissions, vehicle condition, availability, time slot, staff assignment, and supporting evidence.
+- Repeated requests must not create duplicate tasks or bookings.
+- Concurrent booking attempts must not reserve the same vehicle or time slot. Conflicting requests are rejected.
+- A booking is created only when a valid vehicle, slot, and staff assignment are available.
+- Related database changes are committed atomically. Failed transactions leave no partial business action.
+
+### Test-drive lifecycle
+- A vehicle remains unavailable after checkout until staff records its return.
+- An overdue return raises an alert without automatically marking the vehicle as returned.
+- An appointment without a recorded outcome remains unresolved. The system does not automatically classify it as a no-show.
+- Missing contact permission or an unclear test-drive request prevents the corresponding action from being proposed.
+
+### Agent and dependency failures
+- Model, MCP, database, and vector search failures are recorded in the agent trace.
+- Missing procedure evidence is reported as unavailable. The agent must not invent policies or citations.
+- Retrieved documents and lead notes are treated as untrusted data. They cannot override tool permissions or system rules.
+- Database-backed workspace views remain usable when agent-related dependencies fail.
+
+### Auditability
+- Agent traces contain concise, safe summaries of tool inputs, outputs, and execution results. They exclude secrets and hidden model reasoning.
+- The activity log records an action as successful only after the database transaction commits and the result is verified.
+- Failed, rejected, stale, and conflicting actions retain their outcomes for review.
