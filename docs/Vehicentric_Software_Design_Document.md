@@ -86,8 +86,8 @@ Vehicentric is a **modular monolith**: one web app and one backend application w
 ### High-level Architecture
 
 flowchart TB
-OP["Sales Operator"] --> UI["Web App<br/>React + TypeScript"]
-UI --> API["FastAPI"]
+    OP["Sales Operator"] --> UI["Web App<br/>React + TypeScript"]
+    UI --> API["FastAPI"]
 
     subgraph APP["Vehicentric Backend - Modular Monolith"]
         API --> REC["Lead Recovery"]
