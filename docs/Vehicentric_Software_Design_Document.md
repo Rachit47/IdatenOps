@@ -127,25 +127,25 @@ flowchart TB
 
 ```mermaid
 flowchart TD
-A["Find Overdue Leads<br/>Using Business Rules"]
-B["Agent Idaten Investigates<br/>Lead History, Preferences, Inventory and SOPs"]
-C{"Is a Test Drive<br/>the Right Next Step?"}
-D["Propose Follow-up Task<br/>or Request Human Review"]
-E["Find Available Slots<br/>Check Vehicle, Salesperson and Opening Hours"]
-F{"Is a Suitable Slot Available?"}
-G["Propose Follow-up<br/>or Show Alternative Slots"]
-H["Show Recommendation and Evidence<br/>Wait for Human Approval"]
-I{"Approved?"}
-J["Record Rejection<br/>No Business Action Executed"]
-K["Recheck Lead, Vehicle and Slot<br/>Inside a Database Transaction"]
-L{"Still Available?"}
-M["Mark Proposal Stale<br/>Refresh Slots and Request Approval Again"]
-N["Create Test-Drive Booking<br/>Record Action and Trace"]
-O["Appointment Takes Place"]
-P["Staff Records Outcome<br/>and Confirms Vehicle Return"]
-Q{"Vehicle Confirmed Returned?"}
-R["Mark Vehicle Available<br/>If No Other Hold Exists"]
-S["Keep Vehicle Unavailable<br/>Raise Overdue-Return Alert"]
+    A["Find Overdue Leads<br/>Using Business Rules"]
+    B["Agent Idaten Investigates<br/>Lead History, Preferences, Inventory and SOPs"]
+    C{"Is a Test Drive<br/>the Right Next Step?"}
+    D["Propose Follow-up Task<br/>or Request Human Review"]
+    E["Find Available Slots<br/>Check Vehicle, Salesperson and Opening Hours"]
+    F{"Is a Suitable Slot Available?"}
+    G["Propose Follow-up<br/>or Show Alternative Slots"]
+    H["Show Recommendation and Evidence<br/>Wait for Human Approval"]
+    I{"Approved?"}
+    J["Record Rejection<br/>No Business Action Executed"]
+    K["Recheck Lead, Vehicle and Slot<br/>Inside a Database Transaction"]
+    L{"Still Available?"}
+    M["Mark Proposal Stale<br/>Refresh Slots and Request Approval Again"]
+    N["Create Test-Drive Booking<br/>Record Action and Trace"]
+    O["Appointment Takes Place"]
+    P["Staff Records Outcome<br/>and Confirms Vehicle Return"]
+    Q{"Vehicle Confirmed Returned?"}
+    R["Mark Vehicle Available<br/>If No Other Hold Exists"]
+    S["Keep Vehicle Unavailable<br/>Raise Overdue-Return Alert"]
 
     A --> B --> C
     C -- "No" --> D --> H
@@ -159,22 +159,10 @@ S["Keep Vehicle Unavailable<br/>Raise Overdue-Return Alert"]
     L -- "Yes" --> N --> O --> P --> Q
     Q -- "Yes" --> R
     Q -- "No" --> S
-
-- **React and TypeScript:** displays the six screens and calls the API.
-- **FastAPI and Pydantic:** provides API endpoints and validates requests and responses.
-- **MySQL:** stores leads, listings, slots, bookings, tasks, proposals, trace events, and audit records. It is the source of truth for business data.
-- **LangGraph:** runs Agent Idaten's bounded investigation flow.
-- **MCP (Model Context Protocol):** provides a standard interface for the agent to call named, typed tools. The local MCP server uses standard input/output (`stdio`) and calls the same backend services; it does not contain a second copy of business rules.
-- **RAG (retrieval-augmented generation):** finds relevant sections in the sample sales procedures and returns their sources with the answer.
-- **Chroma:** stores searchable numerical representations of procedure text. It can be rebuilt from the source documents.
-- **LLM provider adapter:** lets the backend use one configured language model without tying business rules to a single provider.
-
-Dates, contact restrictions, vehicle readiness, slot availability, conflicts, approval, and database writes are controlled by backend business logic. The model cannot run arbitrary SQL or perform the final approved action by itself.
 ```
 
 ## 5. Project structure
 
-```mermaid
 vehicentric/
 ├── apps/
 │   ├── api/
@@ -206,150 +194,149 @@ vehicentric/
 ├── scripts/                    # Seed data and build the procedure index
 ├── docs/                       # Project notes and evaluation results
 └── .env
-```
 
 ## 6. Database Design
 
 ```mermaid
 erDiagram
-RETAIL_LOCATIONS {
-bigint location_id PK
-string location_code UK
-string location_name
-string city
-string timezone
-boolean is_active
-}
-TEAM_MEMBERS {
-bigint team_member_id PK
-bigint location_id FK
-string staff_code UK
-string display_name
-string job_title
-boolean is_active
-}
-VEHICLE_MODELS {
-bigint vehicle_model_id PK
-string make
-string model_name
-string variant
-int model_year
-}
-VEHICLE_LISTINGS {
-bigint listing_id PK
-string stock_number UK
-bigint location_id FK
-bigint vehicle_model_id FK
-decimal asking_price
-string listing_status
-string inspection_status
-}
-TEST_DRIVE_SLOTS {
-bigint test_drive_slot_id PK
-bigint location_id FK
-datetime starts_at_utc
-datetime ends_at_utc
-string slot_status
-}
-PROSPECTS {
-bigint prospect_id PK
-string prospect_code UK
-string display_name
-string contact_permission
-decimal budget_min
-decimal budget_max
-}
-SALES_LEADS {
-bigint lead_id PK
-string lead_code UK
-bigint prospect_id FK
-bigint location_id FK
-bigint assigned_team_member_id FK
-bigint primary_listing_id FK
-string stage
-datetime next_follow_up_at
-}
-LEAD_ACTIVITIES {
-bigint lead_activity_id PK
-bigint lead_id FK
-bigint recorded_by_team_member_id FK
-string activity_type
-datetime occurred_at
-string outcome
-}
-POLICY_DOCUMENTS {
-bigint policy_document_id PK
-string document_code
-string version_label
-string status
-string content_sha256 UK
-}
-POLICY_CHUNKS {
-bigint policy_chunk_id PK
-bigint policy_document_id FK
-int chunk_index
-string chunk_sha256 UK
-string vector_record_id UK
-}
-AGENT_RUNS {
-bigint agent_run_id PK
-string run_uuid UK
-string run_type
-string run_status
-string model_provider
-int duration_ms
-}
-AGENT_RUN_EVENTS {
-bigint agent_run_event_id PK
-bigint agent_run_id FK
-int event_sequence
-string event_type
-string event_status
-int duration_ms
-}
-ACTION_PROPOSALS {
-bigint action_proposal_id PK
-string proposal_uuid UK
-bigint agent_run_id FK
-bigint lead_id FK
-bigint proposed_assignee_team_member_id FK
-bigint proposed_listing_id FK
-bigint proposed_salesperson_team_member_id FK
-bigint proposed_test_drive_slot_id FK
-bigint test_drive_intent_activity_id FK
-string action_type
-string proposal_status
-}
-TEST_DRIVE_BOOKINGS {
-bigint test_drive_booking_id PK
-string booking_code UK
-bigint location_id FK
-bigint lead_id FK
-bigint listing_id FK
-bigint assigned_team_member_id FK
-bigint test_drive_slot_id FK
-bigint source_proposal_id FK
-string booking_status
-string customer_confirmation_status
-}
-FOLLOW_UP_TASKS {
-bigint follow_up_task_id PK
-string task_code UK
-bigint lead_id FK
-bigint assigned_team_member_id FK
-bigint source_proposal_id FK
-string task_type
-string task_status
-datetime due_at
-}
-AUDIT_LOGS {
-bigint audit_log_id PK
-bigint agent_run_id FK
-string actor_type
-string action_name
-string target_type
-string action_outcome
-}
+    RETAIL_LOCATIONS {
+        bigint location_id PK
+        string location_code UK
+        string location_name
+        string city
+        string timezone
+        boolean is_active
+    }
+    TEAM_MEMBERS {
+        bigint team_member_id PK
+        bigint location_id FK
+        string staff_code UK
+        string display_name
+        string job_title
+        boolean is_active
+    }
+    VEHICLE_MODELS {
+        bigint vehicle_model_id PK
+        string make
+        string model_name
+        string variant
+        int model_year
+    }
+    VEHICLE_LISTINGS {
+        bigint listing_id PK
+        string stock_number UK
+        bigint location_id FK
+        bigint vehicle_model_id FK
+        decimal asking_price
+        string listing_status
+        string inspection_status
+    }
+    TEST_DRIVE_SLOTS {
+        bigint test_drive_slot_id PK
+        bigint location_id FK
+        datetime starts_at_utc
+        datetime ends_at_utc
+        string slot_status
+    }
+    PROSPECTS {
+        bigint prospect_id PK
+        string prospect_code UK
+        string display_name
+        string contact_permission
+        decimal budget_min
+        decimal budget_max
+    }
+    SALES_LEADS {
+        bigint lead_id PK
+        string lead_code UK
+        bigint prospect_id FK
+        bigint location_id FK
+        bigint assigned_team_member_id FK
+        bigint primary_listing_id FK
+        string stage
+        datetime next_follow_up_at
+    }
+    LEAD_ACTIVITIES {
+        bigint lead_activity_id PK
+        bigint lead_id FK
+        bigint recorded_by_team_member_id FK
+        string activity_type
+        datetime occurred_at
+        string outcome
+    }
+    POLICY_DOCUMENTS {
+        bigint policy_document_id PK
+        string document_code
+        string version_label
+        string status
+        string content_sha256 UK
+    }
+    POLICY_CHUNKS {
+        bigint policy_chunk_id PK
+        bigint policy_document_id FK
+        int chunk_index
+        string chunk_sha256 UK
+        string vector_record_id UK
+    }
+    AGENT_RUNS {
+        bigint agent_run_id PK
+        string run_uuid UK
+        string run_type
+        string run_status
+        string model_provider
+        int duration_ms
+    }
+    AGENT_RUN_EVENTS {
+        bigint agent_run_event_id PK
+        bigint agent_run_id FK
+        int event_sequence
+        string event_type
+        string event_status
+        int duration_ms
+    }
+    ACTION_PROPOSALS {
+        bigint action_proposal_id PK
+        string proposal_uuid UK
+        bigint agent_run_id FK
+        bigint lead_id FK
+        bigint proposed_assignee_team_member_id FK
+        bigint proposed_listing_id FK
+        bigint proposed_salesperson_team_member_id FK
+        bigint proposed_test_drive_slot_id FK
+        bigint test_drive_intent_activity_id FK
+        string action_type
+        string proposal_status
+    }
+    TEST_DRIVE_BOOKINGS {
+        bigint test_drive_booking_id PK
+        string booking_code UK
+        bigint location_id FK
+        bigint lead_id FK
+        bigint listing_id FK
+        bigint assigned_team_member_id FK
+        bigint test_drive_slot_id FK
+        bigint source_proposal_id FK
+        string booking_status
+        string customer_confirmation_status
+    }
+    FOLLOW_UP_TASKS {
+        bigint follow_up_task_id PK
+        string task_code UK
+        bigint lead_id FK
+        bigint assigned_team_member_id FK
+        bigint source_proposal_id FK
+        string task_type
+        string task_status
+        datetime due_at
+    }
+    AUDIT_LOGS {
+        bigint audit_log_id PK
+        bigint agent_run_id FK
+        string actor_type
+        string action_name
+        string target_type
+        string action_outcome
+    }
 
     RETAIL_LOCATIONS ||--o{ TEAM_MEMBERS : employs
     RETAIL_LOCATIONS ||--o{ VEHICLE_LISTINGS : stocks
