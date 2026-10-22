@@ -31,7 +31,7 @@ The operator can check inventory and create a booking manually. Agent Savitar us
 ### 1.1 Lead Recovery Requirements
 
 | ID | Requirement |
-|---|---|
+|----|----|
 | FR-001 | The system shall identify open leads whose follow-up deadlines have passed using deterministic business rules. |
 | FR-002 | Agent Savitar shall investigate eligible leads using lead history, contact permissions, existing tasks, inventory records, and relevant sales procedures. |
 | FR-003 | The agent shall propose an internal follow-up task or a test-drive booking supported by recorded evidence. |
