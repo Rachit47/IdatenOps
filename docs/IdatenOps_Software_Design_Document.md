@@ -30,53 +30,53 @@ The operator can check inventory and create a booking manually. Agent Savitar us
 
 ### 1.1 Lead Recovery Requirements
 
-| ID | Requirement |
-|----|---|
-| FR-01 | The system shall identify open leads whose follow-up deadlines have passed using deterministic business rules. |
-| FR-02 | Agent Savitar shall investigate eligible leads using lead history, contact permissions, existing tasks, inventory records, and relevant sales procedures. |
-| FR-03 | The agent shall propose an internal follow-up task or a test-drive booking supported by recorded evidence. |
-| FR-04 | Each proposal shall include its supporting facts and applicable procedure references. |
-| FR-05 | An operator shall be able to approve or reject every agent-proposed action. |
-| FR-06 | The backend shall revalidate the relevant business records before executing an approved action. |
-| FR-07 | The system shall reject stale or conflicting proposals and display the reason. |
-| FR-08 | The system shall record action outcomes and associate them with the relevant agent trace. |
-| FR-09 | Staff shall be able to record real-world outcomes that the system cannot independently verify. |
+| ID      | Requirement |
+|:--------|:------------|
+| `FR-01` | The system shall identify open leads whose follow-up deadlines have passed using deterministic business rules. |
+| `FR-02` | Agent Savitar shall investigate eligible leads using lead history, contact permissions, existing tasks, inventory records, and relevant sales procedures. |
+| `FR-03` | The agent shall propose an internal follow-up task or a test-drive booking supported by recorded evidence. |
+| `FR-04` | Each proposal shall include its supporting facts and applicable procedure references. |
+| `FR-05` | An operator shall be able to approve or reject every agent-proposed action. |
+| `FR-06` | The backend shall revalidate the relevant business records before executing an approved action. |
+| `FR-07` | The system shall reject stale or conflicting proposals and display the reason. |
+| `FR-08` | The system shall record action outcomes and associate them with the relevant agent trace. |
+| `FR-09` | Staff shall be able to record real-world outcomes that the system cannot independently verify. |
 
 ### 1.2 Test-Drive Booking Requirements
 
-| ID | Requirement |
-|---|---|
-| FR-10 | The system shall allow an operator to create a test-drive booking manually using the same business validation rules as agent-proposed bookings. |
-| FR-11 | The system shall permit a test-drive proposal only when recorded inbound activity clearly establishes the buyer's request. |
-| FR-12 | The system shall require contact permission to be `permitted` before proposing a test-drive booking. |
-| FR-13 | The system shall validate the vehicle's location, availability, and inspection status, as well as the salesperson's eligibility and location, before booking. |
-| FR-14 | The system shall validate slot availability when displaying slots and recheck it when an approved booking is executed. |
-| FR-15 | The system shall prevent duplicate bookings and conflicting reservations, including concurrent booking attempts. |
-| FR-16 | The system shall reserve a slot only after successful approval and validation. |
-| FR-17 | The system shall support the booking states `scheduled`, `checked_out`, `returned`, `completed`, `cancelled`, and `no_show`, subject to the documented lifecycle rules. |
-| FR-18 | The system shall keep a checked-out vehicle unavailable until staff records its actual return and no other hold applies. |
-| FR-19 | The system shall display an overdue-return alert when a checked-out vehicle passes its expected return time. |
-| FR-20 | The system shall display an unresolved appointment outcome when a slot ends without a recorded outcome, without automatically inferring a no-show. |
-| FR-21 | The system shall retain customer-confirmation status as `not_recorded` until staff records a confirmation outcome. |
+| ID      | Requirement |
+|:--------|:------------|
+| `FR-10` | The system shall allow an operator to create a test-drive booking manually using the same business validation rules as agent-proposed bookings. |
+| `FR-11` | The system shall permit a test-drive proposal only when recorded inbound activity clearly establishes the buyer's request. |
+| `FR-12` | The system shall require contact permission to be `permitted` before proposing a test-drive booking. |
+| `FR-13` | The system shall validate the vehicle's location, availability, and inspection status, as well as the salesperson's eligibility and location, before booking. |
+| `FR-14` | The system shall validate slot availability when displaying slots and recheck it when an approved booking is executed. |
+| `FR-15` | The system shall prevent duplicate bookings and conflicting reservations, including concurrent booking attempts. |
+| `FR-16` | The system shall reserve a slot only after successful approval and validation. |
+| `FR-17` | The system shall support the booking states `scheduled`, `checked_out`, `returned`, `completed`, `cancelled`, and `no_show`, subject to the documented lifecycle rules. |
+| `FR-18` | The system shall keep a checked-out vehicle unavailable until staff records its actual return and no other hold applies. |
+| `FR-19` | The system shall display an overdue-return alert when a checked-out vehicle passes its expected return time. |
+| `FR-20` | The system shall display an unresolved appointment outcome when a slot ends without a recorded outcome, without automatically inferring a no-show. |
+| `FR-21` | The system shall retain customer-confirmation status as `not_recorded` until staff records a confirmation outcome. |
 
 ### 1.3 Agent Trace, Activity, and Audit Requirements
 
-| ID | Requirement |
-|---|---|
-| FR-22 | The system shall record observable agent execution events, including tool calls, retrieval results, decisions, failures, and action outcomes. |
-| FR-23 | The system shall associate proposals and their execution outcomes with the relevant agent run and trace. |
-| FR-24 | The system shall record approvals, rejections, and important business changes with their actor, outcome, and timestamp. |
-| FR-25 | The system shall distinguish proposed actions from actions that were actually executed. |
+| ID      | Requirement |
+|:--------|:------------|
+| `FR-22` | The system shall record observable agent execution events, including tool calls, retrieval results, decisions, failures, and action outcomes. |
+| `FR-23` | The system shall associate proposals and their execution outcomes with the relevant agent run and trace. |
+| `FR-24` | The system shall record approvals, rejections, and important business changes with their actor, outcome, and timestamp. |
+| `FR-25` | The system shall distinguish proposed actions from actions that were actually executed. |
 
 ### 1.4 Knowledge and Failure Handling Requirements
 
 | ID | Requirement |
 |---|---|
-| FR-26 | The agent shall retrieve relevant sales-procedure evidence and provide source references with recommendations when suitable evidence is available. |
-| FR-27 | The system shall report when suitable procedure evidence cannot be found rather than inventing a policy or citation. |
-| FR-28 | The system shall record relevant model, MCP, database, and retrieval failures in the agent trace when the trace service remains available. |
-| FR-29 | The system shall prevent failed validation or execution from being reported as a successful business action. |
-| FR-30 | The system shall keep database-backed workspace functions usable when agent-specific dependencies fail, provided the database and required backend components remain available. |
+| `FR-26` | The agent shall retrieve relevant sales-procedure evidence and provide source references with recommendations when suitable evidence is available. |
+| `FR-27` | The system shall report when suitable procedure evidence cannot be found rather than inventing a policy or citation. |
+| `FR-28` | The system shall record relevant model, MCP, database, and retrieval failures in the agent trace when the trace service remains available. |
+| `FR-29` | The system shall prevent failed validation or execution from being reported as a successful business action. |
+| `FR-30` | The system shall keep database-backed workspace functions usable when agent-specific dependencies fail, provided the database and required backend components remain available. |
 
 <!-- ### Booking lifecycle and recorded outcomes
 
@@ -96,46 +96,46 @@ If an appointment slot ends without a recorded outcome, the schedule displays **
 
 ### 2.1 Security and Access Boundaries
 
-| ID | Requirement |
-|---|---|
-| NFR-01 | The agent shall access business data through explicitly defined tools and shall not execute arbitrary SQL generated by the language model. |
-| NFR-02 | Agent-proposed business actions shall require human approval and backend validation before execution. |
-| NFR-03 | Secrets, credentials, and hidden model reasoning shall not be stored in agent traces or application logs. |
-| NFR-04 | Retrieved documents and lead notes shall be treated as untrusted content and shall not override tool permissions or business rules. |
+| ID      | Requirement |
+|:--------|:------------|
+| `NFR-01` | The agent shall access business data through explicitly defined tools and shall not execute arbitrary SQL generated by the language model. |
+| `NFR-02` | Agent-proposed business actions shall require human approval and backend validation before execution. |
+| `NFR-03` | Secrets, credentials, and hidden model reasoning shall not be stored in agent traces or application logs. |
+| `NFR-04` | Retrieved documents and lead notes shall be treated as untrusted content and shall not override tool permissions or business rules. |
 
 ### 2.2 Reliability and Data Integrity
 
-| ID | Requirement |
-|---|---|
-| NFR-05 | Related business writes shall use database transactions so that a failed transaction does not leave partial changes. |
-| NFR-06 | Duplicate requests and concurrent booking attempts shall be handled using appropriate database constraints, idempotency controls, and concurrency-safe validation. |
-| NFR-07 | A business action shall be reported as successful only after its transaction commits and its outcome is verified. |
-| NFR-08 | Failure of an agent-specific dependency shall not unnecessarily disable database-backed workspace functions when their required dependencies remain available. |
+| ID      | Requirement |
+|:--------|:------------|
+| `NFR-05` | Related business writes shall use database transactions so that a failed transaction does not leave partial changes. |
+| `NFR-06` | Duplicate requests and concurrent booking attempts shall be handled using appropriate database constraints, idempotency controls, and concurrency-safe validation. |
+| `NFR-07` | A business action shall be reported as successful only after its transaction commits and its outcome is verified. |
+| `NFR-08` | Failure of an agent-specific dependency shall not unnecessarily disable database-backed workspace functions when their required dependencies remain available. |
 
 ### 2.3 Observability and Auditability
 
-| ID | Requirement |
-|---|---|
-| NFR-09 | Agent execution records shall identify the relevant run, event sequence, outcome, and available error details. |
-| NFR-10 | Logs and traces shall contain concise, safe summaries rather than secrets or hidden model reasoning. |
-| NFR-11 | The system shall distinguish proposed, approved, rejected, failed, stale, and successfully executed actions wherever applicable. |
+| ID      | Requirement |
+|:--------|:------------|
+| `NFR-09` | Agent execution records shall identify the relevant run, event sequence, outcome, and available error details. |
+| `NFR-10` | Logs and traces shall contain concise, safe summaries rather than secrets or hidden model reasoning. |
+| `NFR-11` | The system shall distinguish proposed, approved, rejected, failed, stale, and successfully executed actions wherever applicable. |
 
 ### 2.4 Maintainability and Architecture
 
-| ID | Requirement |
-|---|---|
-| NFR-12 | The backend shall remain a modular monolith with clearly defined business capabilities and controlled dependencies. |
-| NFR-13 | Business validation and transaction logic shall reside in backend business services rather than being duplicated across API routes, agent prompts, and MCP tools. |
-| NFR-14 | The application shall use configuration for environment-specific settings and shall not require committed secrets. |
-| NFR-15 | Core business rules and critical failure paths shall be covered by automated tests. |
+| ID      | Requirement |
+|:--------|:------------|
+| `NFR-12` | The backend shall remain a modular monolith with clearly defined business capabilities and controlled dependencies. |
+| `NFR-13` | Business validation and transaction logic shall reside in backend business services rather than being duplicated across API routes, agent prompts, and MCP tools. |
+| `NFR-14` | The application shall use configuration for environment-specific settings and shall not require committed secrets. |
+| `NFR-15` | Core business rules and critical failure paths shall be covered by automated tests. |
 
 ### 2.5 Usability and Demonstrability
 
-| ID | Requirement |
-|---|---|
-| NFR-16 | The workspace shall present proposal evidence, approval decisions, and execution outcomes in a form that an operator can review. |
-| NFR-17 | Validation failures and booking conflicts shall provide a clear reason that helps the operator decide what to do next. |
-| NFR-18 | The project shall support a repeatable local demonstration using generated sample data and documented setup instructions. |
+| ID      | Requirement |
+|:--------|:------------|
+| `NFR-16` | The workspace shall present proposal evidence, approval decisions, and execution outcomes in a form that an operator can review. |
+| `NFR-17` | Validation failures and booking conflicts shall provide a clear reason that helps the operator decide what to do next. |
+| `NFR-18` | The project shall support a repeatable local demonstration using generated sample data and documented setup instructions. |
 
 ## 3. Scope
 
