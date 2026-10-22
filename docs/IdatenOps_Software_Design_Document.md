@@ -284,104 +284,40 @@ IdatenOps/
 
 ```mermaid
 erDiagram
-    team_members {
-        bigint team_member_id PK
-        bigint location_id FK,UK
-        varchar(24) staff_code UK
-        varchar(120) display_name
-        enum(sales_executive,team_lead,operations_specialist) job_title
-        tinyint(1) is_active
-        tinyint(1) is_test_drive_eligible
-        datetime(3) created_at
-    }
-    policy_documents {
-        bigint policy_document_id PK
-        varchar(100) document_code UK
-        varchar(200) title
-        varchar(40) version_label UK
-        enum(authored_project_sop,approved_business_source) source_type
-        varchar(500) source_path
-        char(64) content_sha256 UK
-        enum(draft,active,retired) status
-        date effective_from
-        date effective_to
-        varchar(300) owner_note
-        datetime(3) created_at
-        datetime(3) updated_at
-    }
-    policy_chunks {
-        bigint policy_chunk_id PK
-        bigint policy_document_id FK,UK
-        int chunk_index UK
-        varchar(240) section_title
-        mediumtext chunk_text
-        int approximate_token_count
-        char(64) chunk_sha256 UK
-        varchar(120) vector_record_id UK
-        datetime(3) created_at
-    }
-    agent_run_events {
-        bigint agent_run_event_id PK
-        bigint agent_run_id FK,UK
-        int event_sequence UK
-        enum(state_transition,model_call,tool_call,retrieval,guardrail,proposal,action_execution,error,evaluation) event_type
-        varchar(120) component_name
-        enum(started,succeeded,failed,skipped) event_status
-        json input_summary
-        json output_summary
-        int duration_ms
-        int prompt_tokens
-        int completion_tokens
-        varchar(80) error_code
-        varchar(500) error_summary
-        datetime(3) created_at
-    }
-    follow_up_tasks {
-        bigint follow_up_task_id PK
-        varchar(32) task_code UK
-        bigint lead_id FK
+    sales_leads {
+        bigint lead_id PK
+        varchar(32) lead_code UK
+        bigint prospect_id FK
+        bigint location_id FK
         bigint assigned_team_member_id FK
-        bigint source_proposal_id FK,UK
-        enum(call,prepare_message_draft,review_contact_permission,review_inventory_alternative,verify_lead_details,follow_up_review) task_type
-        enum(call,whatsapp,email,none,unknown) channel
-        varchar(200) title
-        text task_instructions
-        text draft_message
-        enum(critical,high,normal,low) priority
-        enum(open,in_progress,completed,cancelled) task_status
-        datetime(3) due_at
-        enum(operator,approved_agent_proposal) created_origin
-        char(64) idempotency_key UK
-        varchar(180) active_lead_task_key UK
-        varchar(1000) completion_note
-        datetime(3) completed_at
+        bigint primary_listing_id FK
+        varchar(32) lead_source
+        varchar(32) stage
+        decimal(12,2) requested_budget_min
+        decimal(12,2) requested_budget_max
+        varchar(80) requested_make
+        varchar(100) requested_model
+        varchar(32) requested_body_type
+        varchar(24) requested_fuel_type
+        varchar(24) requested_transmission
+        varchar(32) purchase_timeframe
+        datetime(3) next_follow_up_at
+        datetime(3) last_contact_at
+        datetime(3) closed_at
+        varchar(300) closed_reason
         datetime(3) created_at
         datetime(3) updated_at
-    }
-    audit_logs {
-        bigint audit_log_id PK
-        bigint agent_run_id FK
-        enum(operator,agent,system) actor_type
-        varchar(100) actor_label
-        varchar(120) action_name
-        varchar(80) target_type
-        bigint target_id
-        enum(success,rejected,failed) action_outcome
-        json before_state
-        json after_state
-        char(36) correlation_uuid
-        datetime(3) created_at
     }
     agent_runs {
         bigint agent_run_id PK
         char(36) run_uuid UK
-        enum(daily_lead_recovery,single_lead_investigation,evaluation) run_type
-        enum(queued,running,succeeded,partial,failed,cancelled) run_status
+        varchar(40) run_type
+        varchar(24) run_status
         varchar(100) initiated_by
         varchar(80) model_provider
         varchar(120) model_name
-        smallint candidate_count
-        smallint proposal_count
+        int candidate_count
+        int proposal_count
         int prompt_tokens
         int completion_tokens
         decimal(12,8) estimated_cost_usd
@@ -394,126 +330,50 @@ erDiagram
         datetime(3) created_at
         datetime(3) updated_at
     }
-    sales_leads {
-        bigint lead_id PK
-        varchar(32) lead_code UK
-        bigint prospect_id FK
-        bigint location_id FK,UK
-        bigint assigned_team_member_id FK
-        bigint primary_listing_id FK
-        enum(website,marketplace,phone,walk_in,referral,campaign,other) lead_source
-        enum(new,attempted_contact,contacted,qualified,test_drive_requested,negotiation,won,lost,invalid) stage
-        decimal(12,2) requested_budget_min
-        decimal(12,2) requested_budget_max
-        varchar(80) requested_make
-        varchar(100) requested_model
-        enum(hatchback,sedan,suv,muv,coupe,other,unknown) requested_body_type
-        enum(petrol,diesel,cng,electric,hybrid,other,unknown) requested_fuel_type
-        enum(manual,automatic,amt,cvt,dct,single_speed,other,unknown) requested_transmission
-        enum(immediate,within_30_days,within_90_days,flexible,unknown) purchase_timeframe
-        datetime(3) next_follow_up_at
-        datetime(3) last_contact_at
-        datetime(3) created_at
-        datetime(3) updated_at
-        datetime(3) closed_at
-        varchar(300) closed_reason
-        enum(synthetic_scenario) data_origin
-    }
     prospects {
         bigint prospect_id PK
         varchar(32) prospect_code UK
         varchar(120) display_name
         varchar(100) city
-        enum(call,whatsapp,email,unknown) preferred_contact_channel
-        enum(permitted,unknown,do_not_contact) contact_permission
+        varchar(24) preferred_contact_channel
+        varchar(24) contact_permission
         decimal(12,2) budget_min
         decimal(12,2) budget_max
         varchar(80) preferred_make
         varchar(100) preferred_model
-        enum(hatchback,sedan,suv,muv,coupe,other,unknown) preferred_body_type
-        enum(petrol,diesel,cng,electric,hybrid,other,unknown) preferred_fuel_type
-        enum(manual,automatic,amt,cvt,dct,single_speed,other,unknown) preferred_transmission
-        enum(immediate,within_30_days,within_90_days,flexible,unknown) purchase_timeframe
-        enum(synthetic_scenario) data_origin
-        datetime(3) created_at
-        datetime(3) updated_at
-    }
-    retail_locations {
-        bigint location_id PK
-        varchar(24) location_code UK
-        varchar(160) location_name
-        varchar(100) city
-        varchar(100) state
-        varchar(64) timezone
-        tinyint(1) is_active
+        varchar(32) preferred_body_type
+        varchar(24) preferred_fuel_type
+        varchar(24) preferred_transmission
+        varchar(32) purchase_timeframe
         datetime(3) created_at
         datetime(3) updated_at
     }
     action_proposals {
         bigint action_proposal_id PK
         char(36) proposal_uuid UK
-        bigint agent_run_id FK,UK
-        bigint lead_id FK,UK
-        enum(create_follow_up_task,book_test_drive) action_type
-        enum(call,prepare_message_draft,review_contact_permission,review_inventory_alternative,verify_lead_details,follow_up_review) proposed_task_type
+        bigint agent_run_id FK
+        bigint lead_id FK
+        varchar(32) action_type
+        varchar(40) proposed_task_type
         varchar(200) title
         text task_instructions
-        enum(call,whatsapp,email,none,unknown) suggested_channel
+        varchar(24) suggested_channel
         text draft_message
         bigint proposed_assignee_team_member_id FK
         datetime(3) proposed_due_at
-        bigint proposed_listing_id FK,UK
-        bigint proposed_salesperson_team_member_id FK,UK
-        bigint proposed_test_drive_slot_id FK,UK
+        bigint proposed_listing_id FK
+        bigint proposed_salesperson_team_member_id FK
+        bigint proposed_test_drive_slot_id FK
         bigint test_drive_intent_activity_id FK
-        enum(critical,high,normal,low) priority
+        varchar(16) priority
         json evidence_refs
         json policy_citations
-        enum(pending,approved,rejected,expired,stale) proposal_status
-        char(64) idempotency_key UK
+        varchar(16) proposal_status
+        varchar(128) idempotency_key UK
         datetime(3) expires_at
         datetime(3) decision_at
         varchar(100) decided_by
         varchar(500) decision_note
-        bigint pending_lead_id UK
-        datetime(3) created_at
-        datetime(3) updated_at
-    }
-    vehicle_listings {
-        bigint listing_id PK
-        varchar(32) stock_number UK
-        bigint location_id FK,UK
-        bigint vehicle_model_id FK
-        smallint registration_year
-        int odometer_km
-        decimal(12,2) asking_price
-        enum(excellent,good,fair,needs_review) condition_grade
-        enum(not_started,in_progress,passed,needs_review,failed) inspection_status
-        enum(available,reserved,sold,withdrawn) listing_status
-        date acquired_at
-        date listed_at
-        date sold_at
-        enum(synthetic_scenario) data_origin
-        enum(synthetic_rule_based) asking_price_origin
-        varchar(500) scenario_notes
-        datetime(3) created_at
-        datetime(3) updated_at
-    }
-    vehicle_models {
-        bigint vehicle_model_id PK
-        varchar(80) make UK
-        varchar(100) model_name UK
-        varchar(120) variant UK
-        smallint model_year UK
-        enum(petrol,diesel,cng,electric,hybrid,other,unknown) fuel_type
-        enum(manual,automatic,amt,cvt,dct,single_speed,other,unknown) transmission
-        enum(hatchback,sedan,suv,muv,coupe,other,unknown) body_type
-        tinyint seating_capacity
-        smallint engine_cc
-        decimal(6,2) claimed_mileage_kmpl
-        varchar(1000) specification_source_url
-        date specification_checked_at
-        varchar(500) source_notes
         datetime(3) created_at
         datetime(3) updated_at
     }
@@ -526,21 +386,129 @@ erDiagram
         bigint assigned_team_member_id FK
         bigint test_drive_slot_id FK
         bigint source_proposal_id FK,UK
-        enum(operator,approved_agent_proposal) booking_origin
-        enum(scheduled,checked_out,returned,completed,cancelled,no_show) booking_status
-        enum(not_recorded,confirmed,declined) customer_confirmation_status
-        varchar(500) customer_confirmation_note
+        varchar(32) booking_origin
+        varchar(24) booking_status
+        varchar(24) customer_confirmation_status
         datetime(3) checked_out_at_utc
         datetime(3) actual_return_at_utc
-        enum(interested,follow_up_needed,not_interested,sale_progressed,other) completion_outcome
+        varchar(32) completion_outcome
         varchar(1000) outcome_note
         datetime(3) completed_at_utc
         datetime(3) cancelled_at_utc
         varchar(500) cancellation_reason
         datetime(3) no_show_at_utc
-        char(64) idempotency_key UK
+        varchar(128) idempotency_key UK
         varchar(100) active_vehicle_slot_key UK
         varchar(100) active_staff_slot_key UK
+        datetime(3) created_at
+        datetime(3) updated_at
+    }
+    lead_activities {
+        bigint lead_activity_id PK
+        bigint lead_id FK
+        bigint recorded_by_team_member_id FK
+        varchar(48) activity_type
+        varchar(16) direction
+        varchar(24) channel
+        varchar(32) outcome
+        varchar(1000) summary_text
+        text unstructured_note
+        datetime(3) occurred_at
+        datetime(3) created_at
+        varchar(32) data_origin
+    }
+    follow_up_tasks {
+        bigint follow_up_task_id PK
+        varchar(32) task_code UK
+        bigint lead_id FK
+        bigint assigned_team_member_id FK
+        bigint source_proposal_id FK,UK
+        varchar(40) task_type
+        varchar(24) channel
+        varchar(200) title
+        text task_instructions
+        text draft_message
+        varchar(16) priority
+        varchar(24) task_status
+        datetime(3) due_at
+        varchar(32) created_origin
+        varchar(128) idempotency_key UK
+        varchar(1000) completion_note
+        datetime(3) completed_at
+        datetime(3) created_at
+        datetime(3) updated_at
+    }
+    agent_run_events {
+        bigint agent_run_event_id PK
+        bigint agent_run_id FK,UK
+        int event_sequence UK
+        varchar(32) event_type
+        varchar(120) component_name
+        varchar(24) event_status
+        json input_summary
+        json output_summary
+        int duration_ms
+        int prompt_tokens
+        int completion_tokens
+        varchar(80) error_code
+        varchar(500) error_summary
+        datetime(3) created_at
+    }
+    audit_logs {
+        bigint audit_log_id PK
+        bigint agent_run_id FK
+        varchar(16) actor_type
+        varchar(100) actor_label
+        varchar(120) action_name
+        varchar(80) target_type
+        bigint target_id
+        varchar(16) action_outcome
+        json before_state
+        json after_state
+        char(36) correlation_uuid
+        datetime(3) created_at
+    }
+    policy_chunks {
+        bigint policy_chunk_id PK
+        bigint policy_document_id FK,UK
+        int chunk_index UK
+        varchar(240) section_title
+        mediumtext chunk_text
+        varchar(120) vector_record_id UK
+        datetime(3) created_at
+    }
+    policy_documents {
+        bigint policy_document_id PK
+        varchar(100) document_code UK
+        varchar(200) title
+        varchar(40) version_label UK
+        varchar(500) source_path
+        char(64) content_sha256
+        varchar(16) status
+        date effective_from
+        date effective_to
+        datetime(3) created_at
+        datetime(3) updated_at
+    }
+    team_members {
+        bigint team_member_id PK
+        bigint location_id FK
+        varchar(24) staff_code UK
+        varchar(120) display_name
+        varchar(80) job_title
+        boolean is_active
+        boolean is_test_drive_eligible
+        datetime(3) created_at
+        datetime(3) updated_at
+    }
+    retail_locations {
+        bigint location_id PK
+        varchar(24) location_code UK
+        varchar(160) location_name
+        varchar(100) city
+        varchar(100) state
+        varchar(64) timezone
+        boolean is_active
         datetime(3) created_at
         datetime(3) updated_at
     }
@@ -551,29 +519,43 @@ erDiagram
         datetime(3) starts_at_utc UK
         datetime(3) ends_at_utc
         smallint turnaround_buffer_minutes
-        enum(open,closed) slot_status
+        varchar(16) slot_status
         varchar(300) closure_reason
         datetime(3) created_at
         datetime(3) updated_at
     }
-    lead_activities {
-        bigint lead_activity_id PK
-        bigint lead_id FK,UK
-        bigint recorded_by_team_member_id FK
-        enum(inbound_enquiry,call_attempt,call_connected,message_received,website_chat,internal_note,test_drive_requested,test_drive_request_withdrawn,test_drive_scheduled,test_drive_customer_confirmation_recorded,test_drive_cancelled,test_drive_checked_out,test_drive_returned,test_drive_completed,test_drive_no_show,status_changed,follow_up_completed,contact_permission_updated) activity_type
-        enum(inbound,outbound,internal) direction
-        enum(call,whatsapp,email,website,marketplace,walk_in,internal,unknown) channel
-        enum(connected,no_answer,interested,not_interested,requested_callback,permission_unknown,do_not_contact,information_only,other,not_applicable) outcome
-        varchar(1000) summary_text
-        text unstructured_note
-        datetime(3) occurred_at
+    vehicle_listings {
+        bigint listing_id PK
+        varchar(32) stock_number UK
+        bigint location_id FK
+        bigint vehicle_model_id FK
+        smallint registration_year
+        int odometer_km
+        decimal(12,2) asking_price
+        varchar(24) condition_grade
+        varchar(24) inspection_status
+        varchar(24) listing_status
+        date acquired_at
+        date listed_at
+        datetime(3) sold_at
+        varchar(32) data_origin
         datetime(3) created_at
-        enum(synthetic_scenario,operator_entry) data_origin
+        datetime(3) updated_at
+    }
+    vehicle_models {
+        bigint vehicle_model_id PK
+        varchar(80) make
+        varchar(100) model_name
+        varchar(120) variant
+        smallint model_year
+        varchar(24) fuel_type
+        varchar(24) transmission
+        varchar(32) body_type
+        datetime(3) created_at
     }
     retail_locations ||--o{ team_members : "location_id"
     retail_locations ||--o{ vehicle_listings : "location_id"
     vehicle_models ||--o{ vehicle_listings : "vehicle_model_id"
-    retail_locations ||--o{ test_drive_slots : "location_id"
     prospects ||--o{ sales_leads : "prospect_id"
     retail_locations ||--o{ sales_leads : "location_id"
     team_members ||--o{ sales_leads : "assigned_team_member_id"
@@ -582,6 +564,7 @@ erDiagram
     team_members ||--o{ lead_activities : "recorded_by_team_member_id"
     policy_documents ||--o{ policy_chunks : "policy_document_id"
     agent_runs ||--o{ agent_run_events : "agent_run_id"
+    retail_locations ||--o{ test_drive_slots : "location_id"
     agent_runs ||--o{ action_proposals : "agent_run_id"
     sales_leads ||--o{ action_proposals : "lead_id"
     team_members ||--o{ action_proposals : "proposed_assignee_team_member_id"
@@ -599,6 +582,7 @@ erDiagram
     team_members ||--o{ follow_up_tasks : "assigned_team_member_id"
     action_proposals ||--o{ follow_up_tasks : "source_proposal_id"
     agent_runs ||--o{ audit_logs : "agent_run_id"
+
 ```
 
 | Table                                         | What it stores                                                                                     |
