@@ -2,13 +2,13 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from idatenops.leads.types import (
+from idatenops.leads.lead_models import (
     ActivityDirection,
     ActivityType,
     ContactPermission,
     LeadActivityEvidence,
 )
-from idatenops.test_drives.eligibility import (
+from idatenops.test_drives.test_drive_booking_eligibility import (
     BookingBlockerCode,
     InspectionStatus,
     ListingStatus,

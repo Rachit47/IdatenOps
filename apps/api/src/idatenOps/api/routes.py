@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter
 
-from idatenops.test_drives.eligibility import (
+from idatenops.test_drives.test_drive_booking_eligibility import (
     TestDriveEligibilityResult,
     BookingEligibilitySnapshot,
     evaluate_test_drive_eligibility,

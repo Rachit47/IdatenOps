@@ -1,10 +1,10 @@
 import pytest
 
-from idatenops.follow_ups.rules import (
+from idatenops.follow_ups.follow_up_permission_rules import (
     FollowUpTaskType,
     evaluate_follow_up_permission,
 )
-from idatenops.leads.types import ContactPermission
+from idatenops.leads.lead_models import ContactPermission
 
 
 @pytest.mark.parametrize(

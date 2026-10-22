@@ -8,7 +8,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
 
-from idatenops.leads.types import ContactPermission
+from idatenops.leads.lead_models import ContactPermission
 
 
 class FollowUpTaskType(StrEnum):

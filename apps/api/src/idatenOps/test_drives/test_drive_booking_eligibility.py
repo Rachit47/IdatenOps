@@ -10,7 +10,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from idatenops.leads.types import (
+from idatenops.leads.lead_models import (
     ActivityDirection,
     ActivityType,
     ContactPermission,
