@@ -256,3 +256,38 @@ def test_any_active_resource_hold_blocks_a_proposal(conflict_field, expected_cod
 def test_naive_timestamp_is_rejected_at_the_boundary() -> None:
     with pytest.raises(ValueError, match="timezone"):
         _activity(occurred_at_utc=datetime(2026, 10, 22, 9, 0))
+
+def test_future_request_is_not_valid_evidence_yet() -> None:
+    future_request = _activity(
+        occurred_at_utc=NOW + timedelta(minutes=1),
+    )
+
+    result = evaluate_test_drive_eligibility(
+        _snapshot(activities=(future_request,)),
+        now_utc=NOW,
+    )
+
+    blocker_codes = {blocker.code for blocker in result.blockers}
+
+    assert BookingBlockerCode.MISSING_INBOUND_REQUEST in blocker_codes
+    assert result.matched_request_activity_id is None
+  
+def test_slot_with_invalid_time_window_is_blocked() -> None:
+    slot = SlotSnapshot(
+        test_drive_slot_id=90,
+        location_id=10,
+        starts_at_utc=NOW + timedelta(hours=2),
+        ends_at_utc=NOW + timedelta(hours=2),
+        status=SlotStatus.OPEN,
+        turnaround_buffer_minutes=15,
+    )
+
+    result = evaluate_test_drive_eligibility(
+        _snapshot(slot=slot),
+        now_utc=NOW,
+    )
+
+    blocker_codes = {blocker.code for blocker in result.blockers}
+
+    assert BookingBlockerCode.SLOT_WINDOW_INVALID in blocker_codes
+    assert result.eligible is False
