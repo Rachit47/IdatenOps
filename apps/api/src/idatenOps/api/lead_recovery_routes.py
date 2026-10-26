@@ -7,10 +7,8 @@ from idatenops.infrastructure.database import get_db_session
 from idatenops.lead_recovery.overdue_lead_models import (
     OverdueLeadSummary,
 )
-from idatenops.lead_recovery.overdue_lead_service import (
-    list_overdue_leads,
-)
 
+from idatenops.leads.lead_service import list_overdue_leads
 
 router = APIRouter(
     prefix="/api/v1/lead-recovery",

@@ -5,10 +5,7 @@ from unittest.mock import Mock
 
 from sqlalchemy.orm import Session
 
-from idatenops.lead_recovery.overdue_lead_repository import (
-    find_overdue_leads,
-)
-
+from idatenops.leads.lead_repository import find_overdue_leads
 
 def test_find_overdue_leads_maps_rows_and_uses_utc() -> None:
     session = Mock(spec=Session)

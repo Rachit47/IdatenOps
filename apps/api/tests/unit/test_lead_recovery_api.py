@@ -1,6 +1,6 @@
 """Tests for the overdue-lead API."""
 
-from datetime import datetime, timezone
+from datetime import datetime
 from unittest.mock import Mock
 
 from fastapi.testclient import TestClient
